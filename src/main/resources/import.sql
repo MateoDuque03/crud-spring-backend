@@ -1,4 +1,6 @@
 /* Populate tabla clientes */
+CREATE DATABASE db_springboot_backend;
+CREATE TABLE clientes;
 INSERT INTO clientes (nombre, apellido, email, create_date) VALUES('Andrés', 'Guzmán', 'profesor@bolsadeideas.com', '2018-01-01');
 INSERT INTO clientes (nombre, apellido, email, create_date) VALUES('Mr. John', 'Doe', 'john.doe@gmail.com', '2018-01-02');
 INSERT INTO clientes (nombre, apellido, email, create_date) VALUES('Linus', 'Torvalds', 'linus.torvalds@gmail.com', '2018-01-03');
