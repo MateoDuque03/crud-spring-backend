@@ -17,6 +17,7 @@ import java.util.*;
 public class ClienteRestController {
     @Autowired
     private ClienteService clienteService;
+    private Map<String, Object> response = new HashMap<>();
 
     @GetMapping("/clientes")
     public List<?> index(){
@@ -29,15 +30,13 @@ public class ClienteRestController {
     }
 
     @GetMapping("/clientes/{id}")
-    @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<?> getById(@PathVariable(value="id") long id){
         Cliente cliente = null;
-        Map<String, Object> response = new HashMap<>();
         try{
             cliente = clienteService.findById(id);
         }
-        catch (Exception e){
-            response.put("Error", e.getMessage().concat(": ").concat(e.getLocalizedMessage()));
+        catch (DataAccessException e){
+            response = SetResponseError(e, "Error al realizar la consulta a la base de datos");
             return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
@@ -51,13 +50,11 @@ public class ClienteRestController {
     @PostMapping("/clientes")
     public ResponseEntity<?> createUser(@Validated @RequestBody Cliente cliente){
         Cliente clienteNew = null;
-        Map<String, Object> response = new HashMap<>();
         try {
             cliente.setCreateDate(new Date());
             clienteNew = clienteService.save(cliente);
         }catch (DataAccessException e){
-            response.put("Error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
-            response.put("mensaje", "Error al realizar la insercción a la base de datos");
+            response = SetResponseError(e, "Error al realizar la insercción a la base de datos");
             return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
@@ -70,7 +67,6 @@ public class ClienteRestController {
     public ResponseEntity<?> updateUser(@Validated @RequestBody Cliente cliente){
         Cliente clienteActual = clienteService.findById(cliente.getId());
         Cliente clienteUpdate = null;
-        Map<String, Object> response = new HashMap<>();
         if (clienteActual == null){
             response.put("mensaje", "El usuario a actualizar no existe");
             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
@@ -81,8 +77,7 @@ public class ClienteRestController {
             clienteActual.setEmail(cliente.getEmail());
             clienteUpdate = clienteService.save(clienteActual);
         }catch (DataAccessException e){
-            response.put("Error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
-            response.put("mensaje", "Error al realizar la insercción a la base de datos");
+            response = SetResponseError(e, "Error al realizar la insercción a la base de datos");
             return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
@@ -93,18 +88,22 @@ public class ClienteRestController {
     }
 
     @DeleteMapping("/clientes/{id}")
-    @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<?> deleteUser(@PathVariable(value="id") long id){
-        Map<String, Object> response = new HashMap<>();
         try{
             clienteService.deleteById(id);
         }catch (DataAccessException e){
-            response.put("Error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
-            response.put("mensaje", "Error al eliminar el cliente en la base de datos");
+            response = SetResponseError(e, "Error al eliminar el cliente en la base de datos");
             return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         response.put("mensaje", "El cliente ha sido eliminado con exito");
         return  new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    private Map<String, Object> SetResponseError(DataAccessException ex, String message){
+        Map<String, Object> responseError = new HashMap<>();
+        response.put("Error", ex.getMessage().concat(": ").concat(ex.getMostSpecificCause().getMessage()));
+        response.put("mensaje", message);
+        return responseError;
     }
 }
